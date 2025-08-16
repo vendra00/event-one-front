@@ -49,12 +49,12 @@ export default function ConsumerDashboardScreen({ navigation }: any) {
                     <View style={styles.primaryPill}><Text style={styles.primaryPillText}>Open form</Text></View>
                 </Pressable>
 
-                {/* Future items: we’ll enable these one by one */}
-                <View style={[styles.card, styles.cardDisabled]}>
+                <Pressable onPress={() => navigation.navigate("ConsumerMyRequests")} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
                     <Text style={styles.cardTitle}>My requests</Text>
-                    <Text style={styles.cardSubtitle}>Track proposals and status of your event requests.</Text>
-                    <View style={styles.disabledPill}><Text style={styles.disabledPillText}>Coming soon</Text></View>
-                </View>
+                    <Text style={styles.cardHint}>View & manage</Text>
+                </Pressable>
+
+                {/* Future items: we’ll enable these one by one */}
 
                 <View style={[styles.card, styles.cardDisabled]}>
                     <Text style={styles.cardTitle}>My bookings</Text>
@@ -92,6 +92,8 @@ const styles = StyleSheet.create({
     },
     cardTitle: { fontSize: 18, fontWeight: "800", color: COLORS.text, marginBottom: 4 },
     cardSubtitle: { color: COLORS.subtext, marginBottom: 12 },
+    cardHint: { color: COLORS.subtext, fontSize: 12, fontWeight: "600" },
+    cardPressed: { opacity: 0.95 },
 
     primaryPill: {
         alignSelf: "flex-start",

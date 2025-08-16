@@ -8,6 +8,7 @@ import OfferingsSearchScreen from "./src/screens/Consumer/OfferingsSearchScreen"
 import RequestsScreen from "./src/screens/Provider/RequestsScreen";
 import ConsumerDashboardScreen from "./src/screens/Consumer/ConsumerDashboardScreen";
 import CreateEventRequestScreen from "./src/screens/Consumer/CreateEventRequestScreen";
+import MyRequestsScreen from "./src/screens/Consumer/MyRequestsScreen";
 
 import { View, Text } from "react-native";
 
@@ -41,6 +42,7 @@ function Router() {
                     <Stack.Screen name="ConsumerDashboard" component={ConsumerDashboardScreen} options={{ headerShown: false }} />
                     <Stack.Screen name="ConsumerSearch" component={OfferingsSearchScreen} options={{ title: "Find offerings" }} />
                     <Stack.Screen name="ConsumerCreateRequest" component={CreateEventRequestScreen} options={{ title: "Create request" }} />
+                    <Stack.Screen name="ConsumerMyRequests" component={MyRequestsScreen} options={{ title: "My requests" }} />
                     {/* add consumer routes one by one later */}
                 </>
             )}
