@@ -3,6 +3,7 @@
     "name": "event-one-mobile",
     "slug": "event-one-mobile",
     "version": "1.0.0",
+    "extra": { "apiBaseUrl": "http://192.168.1.203:8080" },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -24,6 +25,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }
