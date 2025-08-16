@@ -31,13 +31,40 @@ export interface Page<T> {
     content: T[]; totalElements: number; totalPages: number; number: number; size: number;
 }
 
-export interface EventRequestDto {
-    id: number;
-    title: string;
-    startsAt: string;
-    endsAt: string;
-    city?: string;
+export type EventRequestStatus = "OPEN" | "CANCELLED" | "BOOKED";
+
+export interface CreateEventRequestReq {
+    title?: string;
+    startsAt: string;   // ISO
+    endsAt: string;     // ISO
+    city: string;
     region?: string;
     guests: number;
-    status: "OPEN" | "BOOKED" | "CANCELLED";
+    cuisines?: string;  // comma tags
+    services?: string;  // comma tags
+    budgetCents?: number;
+    currency?: string;  // default "EUR"
+    note?: string;
+    providerId?: number;
+    offeringId?: number;
+}
+
+export interface EventRequestDto {
+    id: number;
+    title?: string;
+    startsAt: string;
+    endsAt: string;
+    city: string;
+    region?: string;
+    guests: number;
+    cuisines?: string;
+    services?: string;
+    budgetCents?: number;
+    currency: string;
+    note?: string;
+    status: EventRequestStatus;
+    createdAt?: string;
+    updatedAt?: string;
+    providerId?: number;
+    offeringId?: number;
 }
