@@ -6,6 +6,11 @@ export async function createEventRequest(payload: CreateEventRequestReq): Promis
     return data as EventRequestDto;
 }
 
+export async function fetchEventRequest(id: number): Promise<EventRequestDto> {
+    const { data } = await api.get(`/api/requests/${id}`);
+    return data as EventRequestDto;
+}
+
 function normalizePage<T>(d: any, fallbackPage = 0, fallbackSize = 20): Page<T> {
     const content: T[] =
         d?.content ??

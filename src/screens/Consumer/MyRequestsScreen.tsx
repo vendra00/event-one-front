@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, FlatList, RefreshControl, Text, Pressable, Alert } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { cancelEventRequest, fetchMyEventRequests } from "../../api/requests";
 import type { EventRequestDto, EventRequestStatus } from "../../types/dtos";
 
@@ -21,7 +22,7 @@ function statusColor(s: EventRequestStatus): string {
     }
 }
 
-export default function MyRequestsScreen() {
+export default function MyRequestsScreen({ navigation }: any) {
     const [items, setItems] = useState<EventRequestDto[]>([]);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
@@ -40,7 +41,7 @@ export default function MyRequestsScreen() {
                 setRefreshing(false);
             }
         } else {
-            if (loadingMore || page + 1 >= totalPages) return;
+            if (loadingMore || refreshing || page + 1 >= totalPages) return; // guard while refreshing
             setLoadingMore(true);
             try {
                 const p = await fetchMyEventRequests(page + 1, 20);
@@ -51,9 +52,18 @@ export default function MyRequestsScreen() {
                 setLoadingMore(false);
             }
         }
-    }, [page, totalPages, loadingMore]);
+    }, [page, totalPages, loadingMore, refreshing]);
 
     useEffect(() => { load(true); }, [load]);
+
+    // Refresh when returning from Details (e.g., after cancel there)
+    useFocusEffect(
+        useCallback(() => {
+            // on focus
+            load(true);
+            return () => {};
+        }, [load])
+    );
 
     const onCancel = (it: EventRequestDto) => {
         Alert.alert("Cancel request", `Cancel “${it.title}”?`, [
@@ -62,8 +72,8 @@ export default function MyRequestsScreen() {
                 text: "Yes, cancel",
                 style: "destructive",
                 onPress: async () => {
-                    const updated = await cancelEventRequest(it.id);
-                    setItems(prev => prev.map(p => (p.id === it.id ? updated : p)));
+                    await cancelEventRequest(it.id);
+                    setItems(prev => prev.filter(p => p.id !== it.id)); // hide locally
                 },
             },
         ]);
@@ -130,9 +140,8 @@ export default function MyRequestsScreen() {
                         <Text style={{ color: canCancel ? "#111827" : "#9CA3AF", fontWeight: "600" }}>Cancel</Text>
                     </Pressable>
 
-                    {/* Placeholder for “View” / “Proposals” */}
                     <Pressable
-                        onPress={() => {}}
+                        onPress={() => navigation.navigate("RequestDetails", { id: item.id })}
                         style={({ pressed }) => [
                             {
                                 flexGrow: 1,
