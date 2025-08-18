@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, FlatList, RefreshControl, Text, Pressable, Alert } from "react-native";
+import { View, FlatList, RefreshControl, Text, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { cancelEventRequest, fetchMyEventRequests } from "../../api/requests";
+import { fetchMyEventRequests } from "../../api/requests";
 import type { EventRequestDto, EventRequestStatus } from "../../types/dtos";
 
 function euro(cents?: number | null) {
@@ -41,7 +41,7 @@ export default function MyRequestsScreen({ navigation }: any) {
                 setRefreshing(false);
             }
         } else {
-            if (loadingMore || refreshing || page + 1 >= totalPages) return; // guard while refreshing
+            if (loadingMore || refreshing || page + 1 >= totalPages) return;
             setLoadingMore(true);
             try {
                 const p = await fetchMyEventRequests(page + 1, 20);
@@ -56,31 +56,14 @@ export default function MyRequestsScreen({ navigation }: any) {
 
     useEffect(() => { load(true); }, [load]);
 
-    // Refresh when returning from Details (e.g., after cancel there)
     useFocusEffect(
         useCallback(() => {
-            // on focus
             load(true);
             return () => {};
         }, [load])
     );
 
-    const onCancel = (it: EventRequestDto) => {
-        Alert.alert("Cancel request", `Cancel “${it.title}”?`, [
-            { text: "No" },
-            {
-                text: "Yes, cancel",
-                style: "destructive",
-                onPress: async () => {
-                    await cancelEventRequest(it.id);
-                    setItems(prev => prev.filter(p => p.id !== it.id)); // hide locally
-                },
-            },
-        ]);
-    };
-
     const renderItem = ({ item }: { item: EventRequestDto }) => {
-        const canCancel = item.status === "OPEN";
         return (
             <View
                 style={{
@@ -120,26 +103,7 @@ export default function MyRequestsScreen({ navigation }: any) {
                     </Text>
                 )}
 
-                <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-                    <Pressable
-                        onPress={() => onCancel(item)}
-                        disabled={!canCancel}
-                        style={({ pressed }) => [
-                            {
-                                flexGrow: 1,
-                                alignItems: "center",
-                                paddingVertical: 10,
-                                borderRadius: 10,
-                                backgroundColor: canCancel ? "#f3f4f6" : "#e5e7eb",
-                                borderWidth: 1,
-                                borderColor: canCancel ? "#d1d5db" : "#e5e7eb",
-                                opacity: pressed ? 0.9 : 1,
-                            },
-                        ]}
-                    >
-                        <Text style={{ color: canCancel ? "#111827" : "#9CA3AF", fontWeight: "600" }}>Cancel</Text>
-                    </Pressable>
-
+                <View style={{ flexDirection: "row", marginTop: 12 }}>
                     <Pressable
                         onPress={() => navigation.navigate("RequestDetails", { id: item.id })}
                         style={({ pressed }) => [

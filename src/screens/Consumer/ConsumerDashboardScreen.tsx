@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import { View, Text, Pressable, StyleSheet, ScrollView /*, Image */ } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../auth/AuthContext";
 
 const COLORS = {
@@ -15,7 +16,7 @@ export default function ConsumerDashboardScreen({ navigation }: any) {
     const { me, signOut } = useAuth();
 
     return (
-        <View style={styles.screen}>
+        <SafeAreaView style={styles.screen} edges={["top", "left", "right", "bottom"]}>
             {/* Top bar */}
             <View style={styles.topbar}>
                 <View>
@@ -27,8 +28,14 @@ export default function ConsumerDashboardScreen({ navigation }: any) {
                 </Pressable>
             </View>
 
-            <ScrollView contentContainerStyle={{ paddingVertical: 8 }}>
-                {/* Card: Find offerings (enabled) */}
+            <ScrollView
+                contentContainerStyle={{
+                    paddingVertical: 8,
+                    paddingBottom: 80, // space for logo/footer
+                }}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Card: Find offerings */}
                 <Pressable
                     onPress={() => navigation.navigate("ConsumerSearch")}
                     style={({ pressed }) => [styles.card, pressed && { opacity: 0.95 }]}
@@ -37,43 +44,70 @@ export default function ConsumerDashboardScreen({ navigation }: any) {
                     <Text style={styles.cardSubtitle}>
                         Browse chefs and catering companies by city, cuisine and guest count.
                     </Text>
-                    <View style={styles.primaryPill}><Text style={styles.primaryPillText}>Start</Text></View>
                 </Pressable>
 
+                {/* Card: Create event request */}
                 <Pressable
                     onPress={() => navigation.navigate("ConsumerCreateRequest")}
                     style={({ pressed }) => [styles.card, pressed && { opacity: 0.95 }]}
                 >
                     <Text style={styles.cardTitle}>Create event request</Text>
-                    <Text style={styles.cardSubtitle}>Describe your event and let providers propose offers.</Text>
-                    <View style={styles.primaryPill}><Text style={styles.primaryPillText}>Open form</Text></View>
+                    <Text style={styles.cardSubtitle}>
+                        Describe your event and let providers propose offers.
+                    </Text>
                 </Pressable>
 
-                <Pressable onPress={() => navigation.navigate("ConsumerMyRequests")} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+                {/* Card: My requests */}
+                <Pressable
+                    onPress={() => navigation.navigate("ConsumerMyRequests")}
+                    style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                >
                     <Text style={styles.cardTitle}>My requests</Text>
                     <Text style={styles.cardHint}>View & manage</Text>
                 </Pressable>
 
-                {/* Future items: we’ll enable these one by one */}
-
+                {/* Disabled / future item */}
                 <View style={[styles.card, styles.cardDisabled]}>
                     <Text style={styles.cardTitle}>My bookings</Text>
                     <Text style={styles.cardSubtitle}>View confirmed bookings and details.</Text>
-                    <View style={styles.disabledPill}><Text style={styles.disabledPillText}>Coming soon</Text></View>
+                    <View style={styles.disabledPill}>
+                        <Text style={styles.disabledPillText}>Coming soon</Text>
+                    </View>
+                </View>
+
+                {/* Logo placeholder (appears after content) */}
+                <View style={styles.logoContainer}>
+                    {/* Replace with your real logo when ready:
+          <Image source={require("../../assets/logo.png")} style={styles.logoImage} resizeMode="contain" />
+          */}
+                    <Text style={styles.logoText}>App Logo</Text>
                 </View>
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: COLORS.bg, paddingHorizontal: 20, paddingTop: 40 },
-    topbar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+    screen: {
+        flex: 1,
+        backgroundColor: COLORS.bg,
+        paddingHorizontal: 20,
+    },
+    topbar: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 12,
+    },
     hello: { color: COLORS.subtext, fontSize: 12 },
     email: { color: COLORS.text, fontSize: 16, fontWeight: "700" },
     signOut: {
-        borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, paddingVertical: 6,
-        borderRadius: 10, backgroundColor: "#fff",
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 10,
+        backgroundColor: "#fff",
     },
     signOutText: { color: COLORS.subtext, fontWeight: "600" },
 
@@ -98,7 +132,8 @@ const styles = StyleSheet.create({
     primaryPill: {
         alignSelf: "flex-start",
         backgroundColor: COLORS.primary,
-        paddingHorizontal: 12, paddingVertical: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
         borderRadius: 999,
     },
     primaryPillText: { color: "#fff", fontWeight: "700" },
@@ -107,8 +142,20 @@ const styles = StyleSheet.create({
     disabledPill: {
         alignSelf: "flex-start",
         backgroundColor: "#EEF2FF",
-        paddingHorizontal: 12, paddingVertical: 6,
-        borderRadius: 999, borderWidth: 1, borderColor: "#E5E7EB",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: "#E5E7EB",
     },
     disabledPillText: { color: COLORS.subtext, fontWeight: "600" },
+
+    logoContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 12,
+        paddingVertical: 12,
+    },
+    // logoImage: { width: 140, height: 40 },
+    logoText: { color: COLORS.subtext, fontWeight: "600" },
 });
