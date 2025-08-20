@@ -7,7 +7,7 @@ import RegisterScreen from "./src/screens/RegisterScreen";
 import OfferingsSearchScreen from "./src/screens/Consumer/OfferingsSearchScreen";
 import RequestsScreen from "./src/screens/Provider/RequestsScreen";
 import ConsumerDashboardScreen from "./src/screens/Consumer/ConsumerDashboardScreen";
-import CreateEventRequestScreen from "./src/screens/Consumer/CreateEventRequestScreen";
+import CreateEventRequestScreen from "./src/screens/Consumer/CreateEventRequest/CreateEventRequestScreen";
 import MyRequestsScreen from "./src/screens/Consumer/MyRequestsScreen";
 import RequestDetailsScreen from "./src/screens/Consumer/RequestDetailsScreen";
 
