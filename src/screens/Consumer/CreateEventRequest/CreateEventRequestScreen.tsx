@@ -6,47 +6,43 @@ import { CityPickerModal } from "./CityPickerModal";
 import { ProvincePickerModal } from "./ProvincePickerModal";
 import { createEventRequest } from "../../../api/requests";
 import { getCommunities, getProvinces, getMunicipalities, resolvePostal, GeoOption } from "../../../api/geo";
+import { getCuisines, type CuisineOption } from "../../../api/cuisines";
 import { styles } from "./CreateEventRequestScreen.styles";
 
 export default function CreateEventRequestScreen({ navigation }: any) {
     const [title, setTitle] = useState("");
 
-    // --- GEO options from backend ---
+    // GEO
     const [communities, setCommunities] = useState<GeoOption[]>([]);
     const [provinces, setProvinces] = useState<GeoOption[]>([]);
     const [municipalities, setMunicipalities] = useState<GeoOption[]>([]);
-
-    // Selected codes
     const [communityCode, setCommunityCode] = useState<string>("");
     const [provinceCode, setProvinceCode] = useState<string>("");
     const [municipalityCode, setMunicipalityCode] = useState<string>("");
 
-    // Search-inside-province-dropdown state
     const [provinceModalOpen, setProvinceModalOpen] = useState(false);
     const [provinceSearch, setProvinceSearch] = useState("");
-
-    // Search-inside-city-dropdown state
     const [cityModalOpen, setCityModalOpen] = useState(false);
     const [municipalitySearch, setMunicipalitySearch] = useState<string>("");
 
-    // When auto-resolving from postal, we may need to defer selecting municipality
     const [pendingMunicipalityCode, setPendingMunicipalityCode] = useState<string | null>(null);
 
     const [postalCode, setPostalCode] = useState<string>("");
     const [locality, setLocality] = useState<string>("");
 
     const [guests, setGuests] = useState<string>("8");
-    const [cuisines, setCuisines] = useState("italian,pasta");
+
+    // NEW cuisines
+    const [cuisineOptions, setCuisineOptions] = useState<CuisineOption[]>([]);
+    const [selectedCuisineCodes, setSelectedCuisineCodes] = useState<string[]>(["italian", "pasta"]);
+    const [loadingCuisines, setLoadingCuisines] = useState(false);
+
     const [services, setServices] = useState("waiters");
-    const [budget, setBudget] = useState<string>("100"); // € (text)
+    const [budget, setBudget] = useState<string>("100");
     const [notes, setNotes] = useState("Family birthday dinner");
 
-    const [startsAt, setStartsAt] = useState<Date>(() => {
-        const d = new Date(); d.setHours(19, 0, 0, 0); return d;
-    });
-    const [endsAt, setEndsAt] = useState<Date>(() => {
-        const d = new Date(); d.setHours(23, 0, 0, 0); return d;
-    });
+    const [startsAt, setStartsAt] = useState<Date>(() => { const d = new Date(); d.setHours(19, 0, 0, 0); return d; });
+    const [endsAt, setEndsAt] = useState<Date>(() => { const d = new Date(); d.setHours(23, 0, 0, 0); return d; });
 
     const [pick, setPick] = useState<null | "start" | "end">(null);
     const [submitting, setSubmitting] = useState(false);
@@ -55,6 +51,26 @@ export default function CreateEventRequestScreen({ navigation }: any) {
     const [loadingCommunities, setLoadingCommunities] = useState(false);
     const [loadingProvinces, setLoadingProvinces] = useState(false);
     const [loadingMunicipalities, setLoadingMunicipalities] = useState(false);
+
+    // Load cuisines at mount
+    useEffect(() => {
+        let alive = true;
+        (async () => {
+            try {
+                setLoadingCuisines(true);
+                const data = await getCuisines();
+                if (!alive) return;
+                setCuisineOptions(data);
+            } catch (e: any) {
+                if (!alive) return;
+                console.warn("getCuisines failed:", e?.message);
+                setErr("Failed to load cuisines");
+            } finally {
+                if (alive) setLoadingCuisines(false);
+            }
+        })();
+        return () => { alive = false; };
+    }, []);
 
     // Load communities at mount
     useEffect(() => {
@@ -77,7 +93,7 @@ export default function CreateEventRequestScreen({ navigation }: any) {
         return () => { alive = false; };
     }, []);
 
-    // Load provinces when community changes
+    // Provinces
     useEffect(() => {
         if (!communityCode) return;
         (async () => {
@@ -95,12 +111,10 @@ export default function CreateEventRequestScreen({ navigation }: any) {
         })();
     }, [communityCode]);
 
-    // Load municipalities when province OR search changes (debounced)
+    // Municipalities (debounced)
     useEffect(() => {
         if (!provinceCode) {
-            setMunicipalities([]);
-            setMunicipalityCode("");
-            return;
+            setMunicipalities([]); setMunicipalityCode(""); return;
         }
         const h = setTimeout(async () => {
             try {
@@ -120,7 +134,7 @@ export default function CreateEventRequestScreen({ navigation }: any) {
             } finally {
                 setLoadingMunicipalities(false);
             }
-        }, 300); // debounce
+        }, 300);
         return () => clearTimeout(h);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [provinceCode, municipalitySearch]);
@@ -138,13 +152,11 @@ export default function CreateEventRequestScreen({ navigation }: any) {
 
     const valid = useMemo(() => {
         if (!title.trim()) return false;
-        // Require province (and implicitly community). Municipality optional.
         if (!selectedProvince?.code) return false;
         if (!validPostal) return false;
         const g = Number(guests);
         if (!Number.isFinite(g) || g < 1) return false;
         return startsAt < endsAt;
-
     }, [title, selectedProvince?.code, validPostal, guests, startsAt, endsAt]);
 
     const addHours = (d: Date, h: number) => new Date(d.getTime() + h * 60 * 60 * 1000);
@@ -159,7 +171,6 @@ export default function CreateEventRequestScreen({ navigation }: any) {
         setPick(null);
     };
 
-    // Postal code → auto-select location hierarchy
     const onPostalChange = async (txt: string) => {
         setPostalCode(txt);
         if (/^\d{5}$/.test(txt)) {
@@ -169,7 +180,6 @@ export default function CreateEventRequestScreen({ navigation }: any) {
                 if (r.provinceCode && r.provinceCode !== provinceCode) setProvinceCode(r.provinceCode);
                 if (r.municipalityCode) {
                     setPendingMunicipalityCode(r.municipalityCode);
-                    // if already present in list, set immediately
                     if (municipalities.some(m => m.code === r.municipalityCode)) {
                         setMunicipalityCode(r.municipalityCode);
                         setPendingMunicipalityCode(null);
@@ -177,7 +187,6 @@ export default function CreateEventRequestScreen({ navigation }: any) {
                 }
             } catch (e: any) {
                 console.warn("resolvePostal failed:", e?.message);
-                // keep user-entered postal; no hard error
             }
         } else {
             setPendingMunicipalityCode(null);
@@ -191,28 +200,29 @@ export default function CreateEventRequestScreen({ navigation }: any) {
         return Number.isFinite(n) ? Math.round(n * 100) : undefined;
     };
 
-    const selectedMunicipalityName = useMemo(
-        () => municipalities.find(m => m.code === municipalityCode)?.name,
-        [municipalities, municipalityCode]
-    );
+    const selectedMunicipalityName =
+        useMemo(() => municipalities.find(m => m.code === municipalityCode)?.name, [municipalities, municipalityCode]);
 
-    const startsAtText = useMemo(
-        () => startsAt.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }),
-        [startsAt]
-    );
-    const endsAtText = useMemo(
-        () => endsAt.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }),
-        [endsAt]
-    );
+    const startsAtText =
+        useMemo(() => startsAt.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }), [startsAt]);
+    const endsAtText =
+        useMemo(() => endsAt.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }), [endsAt]);
 
     const dateError = startsAt >= endsAt ? "End must be after start time" : null;
 
     const openProvinceModal = useCallback(() => setProvinceModalOpen(true), []);
-    const closeProvinceModal = useCallback(() => {setProvinceModalOpen(false);}, []);
+    const closeProvinceModal = useCallback(() => { setProvinceModalOpen(false); }, []);
     const openCityModal = useCallback(() => setCityModalOpen(true), []);
     const closeCityModal = useCallback(() => setCityModalOpen(false), []);
     const onPickStart = useCallback(() => setPick("start"), []);
     const onPickEnd = useCallback(() => setPick("end"), []);
+
+    const toggleCuisine = (code: string) => {
+        setSelectedCuisineCodes(prev => prev.includes(code)
+            ? prev.filter(c => c !== code)
+            : [...prev, code]);
+    };
+    const clearCuisines = () => setSelectedCuisineCodes([]);
 
     const submit = async () => {
         if (!valid || submitting) return;
@@ -230,7 +240,7 @@ export default function CreateEventRequestScreen({ navigation }: any) {
                     locality: locality.trim() || undefined,
                     postalCode: postalCode.trim() || undefined,
                 },
-                cuisines: cuisines.trim() || undefined,
+                cuisineCodes: selectedCuisineCodes.length ? selectedCuisineCodes : undefined, // <-- NEW
                 services: services.trim() || undefined,
                 currency: "EUR",
                 budgetCents: parseBudgetToCents(budget),
@@ -268,13 +278,15 @@ export default function CreateEventRequestScreen({ navigation }: any) {
                         provinceCode={provinceCode}
                         municipalityCode={municipalityCode}
                         selectedMunicipalityName={selectedMunicipalityName}
-                        // NEW: pass province name + modal opener
                         selectedProvinceName={selectedProvinceName}
                         onOpenProvinceModal={openProvinceModal}
                         postalCode={postalCode}
                         locality={locality}
                         guests={guests}
-                        cuisines={cuisines}
+
+                        cuisineOptions={cuisineOptions}
+                        selectedCuisineCodes={selectedCuisineCodes}
+
                         services={services}
                         budget={budget}
                         notes={notes}
@@ -287,6 +299,7 @@ export default function CreateEventRequestScreen({ navigation }: any) {
                         loadingCommunities={loadingCommunities}
                         loadingProvinces={loadingProvinces}
                         loadingMunicipalities={loadingMunicipalities}
+                        loadingCuisines={loadingCuisines}
                         onChangeTitle={setTitle}
                         onChangeCommunity={setCommunityCode}
                         onChangeProvince={setProvinceCode}
@@ -296,7 +309,10 @@ export default function CreateEventRequestScreen({ navigation }: any) {
                         onChangeGuests={setGuests}
                         onPickStart={onPickStart}
                         onPickEnd={onPickEnd}
-                        onChangeCuisines={setCuisines}
+
+                        onToggleCuisine={toggleCuisine}
+                        onClearCuisines={clearCuisines}
+
                         onChangeServices={setServices}
                         onChangeBudget={setBudget}
                         onChangeNotes={setNotes}
@@ -314,7 +330,6 @@ export default function CreateEventRequestScreen({ navigation }: any) {
                 </View>
             </TouchableWithoutFeedback>
 
-            {/* Province modal */}
             <ProvincePickerModal
                 visible={provinceModalOpen}
                 onRequestClose={closeProvinceModal}
@@ -322,12 +337,10 @@ export default function CreateEventRequestScreen({ navigation }: any) {
                 provinceCode={provinceCode}
                 onSelect={setProvinceCode}
                 loading={loadingProvinces}
-                // NEW search props
                 search={provinceSearch}
                 onChangeSearch={setProvinceSearch}
             />
 
-            {/* City (Municipality) modal */}
             <CityPickerModal
                 visible={cityModalOpen}
                 onRequestClose={closeCityModal}

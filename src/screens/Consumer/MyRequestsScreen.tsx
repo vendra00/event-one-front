@@ -6,11 +6,21 @@ import type { EventRequestDto, EventRequestStatus } from "../../types/dtos";
 
 function euro(cents?: number | null) {
     if (cents == null) return undefined;
-    return (cents / 100).toLocaleString(undefined, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+    return (cents / 100).toLocaleString(undefined, {
+        style: "currency",
+        currency: "EUR",
+        maximumFractionDigits: 0,
+    });
 }
 function fmt(dIso: string) {
     const d = new Date(dIso);
-    return d.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 }
 function statusColor(s: EventRequestStatus): string {
     switch (s) {
@@ -64,6 +74,22 @@ export default function MyRequestsScreen({ navigation }: any) {
     );
 
     const renderItem = ({ item }: { item: EventRequestDto }) => {
+        // NEW: cuisines are an array of {code,name}
+        const cuisineNames = (item.cuisines ?? []).map(c => c.name).filter(Boolean);
+        // services still CSV
+        const serviceTags = (item.services ?? "")
+            .split(",")
+            .map(s => s.trim())
+            .filter(Boolean);
+
+        const tags = [...cuisineNames, ...serviceTags];
+
+        // Optional: show municipality + province from normalized location
+        const city = item.location?.municipalityName ?? "-";
+        const region = item.location?.provinceName
+            ? `, ${item.location?.provinceName}`
+            : "";
+
         return (
             <View
                 style={{
@@ -86,17 +112,18 @@ export default function MyRequestsScreen({ navigation }: any) {
                 </View>
 
                 <Text style={{ marginTop: 6, color: "#374151" }}>
-                    {item.city ?? "-"}{item.region ? `, ${item.region}` : ""}
+                    {city}{region}
                 </Text>
                 <Text style={{ marginTop: 2, color: "#374151" }}>
                     {fmt(item.startsAt)} – {fmt(item.endsAt)} • {item.guests} guests
                 </Text>
-                {(item.cuisines || item.services) && (
+
+                {tags.length > 0 && (
                     <Text style={{ marginTop: 4, color: "#6B7280" }}>
-                        {(item.cuisines ?? "").split(",").filter(Boolean).join(" · ")}
-                        {item.services ? (item.cuisines ? " · " : "") + item.services.split(",").filter(Boolean).join(" · ") : ""}
+                        {tags.join(" · ")}
                     </Text>
                 )}
+
                 {!!item.budgetCents && (
                     <Text style={{ marginTop: 4, color: "#111827", fontWeight: "600" }}>
                         Budget: {euro(item.budgetCents)}

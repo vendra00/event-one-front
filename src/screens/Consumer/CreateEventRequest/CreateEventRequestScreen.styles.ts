@@ -164,6 +164,33 @@ export const styles = StyleSheet.create({
         backgroundColor: COLORS.border,
         marginLeft: 12,
     },
+    chipRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        marginTop: 4,
+    },
+    chip: {
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        backgroundColor: "#fff",
+        marginRight: 8,
+        marginBottom: 8,
+    },
+    chipSelected: {
+        backgroundColor: "#EEF2FF", // subtle
+        borderColor: COLORS.primary,
+    },
+    chipText: {
+        color: COLORS.text,
+        fontSize: 13,
+    },
+    chipTextSelected: {
+        color: COLORS.primary,
+        fontWeight: "700",
+    },
 });
 
 export type CreateEventRequestStyles = typeof styles;

@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import {
     View, Text, TextInput, Pressable, ScrollView, ActivityIndicator,
 } from "react-native";
@@ -6,6 +6,7 @@ import { Picker } from "@react-native-picker/picker";
 import { styles } from "./CreateEventRequestScreen.styles";
 import { COLORS } from "../../../theme/colors";
 import type { GeoOption } from "../../../api/geo";
+import type { CuisineOption } from "../../../api/cuisines";
 import { AccordionSection } from "./AccordionSection";
 
 type Props = {
@@ -13,17 +14,21 @@ type Props = {
     err: string | null;
     title: string;
     communities: GeoOption[];
-    provinces: GeoOption[]; // still received, though selection happens in modal
+    provinces: GeoOption[];
     municipalities: GeoOption[];
     communityCode: string;
     provinceCode: string;
     municipalityCode: string;
-    selectedProvinceName?: string;          // NEW
+    selectedProvinceName?: string;
     selectedMunicipalityName?: string;
     postalCode: string;
     locality: string;
     guests: string;
-    cuisines: string;
+
+    // cuisines
+    cuisineOptions: CuisineOption[];
+    selectedCuisineCodes: string[];
+
     services: string;
     budget: string;
     notes: string;
@@ -36,39 +41,62 @@ type Props = {
 
     // loading flags
     loadingCommunities: boolean;
-    loadingProvinces: boolean;              // used to show spinner on Provincia field
+    loadingProvinces: boolean;
     loadingMunicipalities: boolean;
+    loadingCuisines: boolean;
 
     // handlers
     onChangeTitle: (v: string) => void;
     onChangeCommunity: (code: string) => void;
-    onChangeProvince: (code: string) => void; // still in props for compatibility (set by modal)
-    onOpenProvinceModal: () => void;           // NEW
+    onChangeProvince: (code: string) => void;
+    onOpenProvinceModal: () => void;
     onOpenCityModal: () => void;
     onChangePostal: (v: string) => void;
     onChangeLocality: (v: string) => void;
     onChangeGuests: (v: string) => void;
     onPickStart: () => void;
     onPickEnd: () => void;
-    onChangeCuisines: (v: string) => void;
+
+    // cuisine handlers
+    onToggleCuisine: (code: string) => void;
+    onClearCuisines: () => void;
+
     onChangeServices: (v: string) => void;
     onChangeBudget: (v: string) => void;
     onChangeNotes: (v: string) => void;
     onSubmit: () => void;
 };
 
+const MAX_CUISINES = 20;
+
 export const CreateEventRequestForm = memo((props: Props) => {
     const {
-        err, title, communities, provinces, // provinces kept (not used directly in UI now)
+        err, title, communities,
         communityCode, selectedProvinceName, selectedMunicipalityName,
-        postalCode, locality, guests, cuisines, services, budget, notes,
+        postalCode, locality, guests,
+        cuisineOptions = [], selectedCuisineCodes = [],
+        services, budget, notes,
         startsAtText, endsAtText, validPostal, dateError, submitting, valid,
-        loadingCommunities, loadingProvinces,
-        onChangeTitle, onChangeCommunity, onChangeProvince, // eslint wants it present since in Props
+        loadingCommunities, loadingProvinces, loadingCuisines,
+        onChangeTitle, onChangeCommunity,
         onOpenProvinceModal, onOpenCityModal,
         onChangePostal, onChangeLocality, onChangeGuests, onPickStart, onPickEnd,
-        onChangeCuisines, onChangeServices, onChangeBudget, onChangeNotes, onSubmit,
+        onToggleCuisine, onClearCuisines,
+        onChangeServices, onChangeBudget, onChangeNotes, onSubmit,
     } = props;
+
+    const selectedSet = useMemo(() => new Set(selectedCuisineCodes), [selectedCuisineCodes]);
+    const reachedLimit = selectedSet.size >= MAX_CUISINES;
+
+    // Selected first, then alphabetical by name
+    const sortedCuisineOptions = useMemo(() => {
+        return [...cuisineOptions].sort((a, b) => {
+            const aSel = selectedSet.has(a.code) ? 0 : 1;
+            const bSel = selectedSet.has(b.code) ? 0 : 1;
+            if (aSel !== bSel) return aSel - bSel;
+            return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+        });
+    }, [cuisineOptions, selectedSet]);
 
     return (
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
@@ -104,14 +132,18 @@ export const CreateEventRequestForm = memo((props: Props) => {
                     <View style={styles.row}>
                         <Pressable
                             accessibilityRole="button"
+                            accessibilityLabel="Pick start date and time"
                             onPress={onPickStart}
-                            style={({ pressed }) => [styles.dateBtn, pressed && { opacity: 0.95 }]}>
+                            style={({ pressed }) => [styles.dateBtn, pressed && { opacity: 0.95 }]}
+                        >
                             <Text style={styles.dateBtnText}>Starts: {startsAtText}</Text>
                         </Pressable>
                         <Pressable
                             accessibilityRole="button"
+                            accessibilityLabel="Pick end date and time"
                             onPress={onPickEnd}
-                            style={({ pressed }) => [styles.dateBtn, pressed && { opacity: 0.95 }]}>
+                            style={({ pressed }) => [styles.dateBtn, pressed && { opacity: 0.95 }]}
+                        >
                             <Text style={styles.dateBtnText}>Ends: {endsAtText}</Text>
                         </Pressable>
                     </View>
@@ -131,20 +163,62 @@ export const CreateEventRequestForm = memo((props: Props) => {
             {/* Services */}
             <AccordionSection title="Services">
                 <View style={styles.card}>
-                    <Text style={[styles.label, { marginTop: 0 }]}>Cuisines (tags)</Text>
-                    <TextInput
-                        value={cuisines}
-                        onChangeText={onChangeCuisines}
-                        placeholder="e.g., italian,pasta"
-                        style={styles.input}
-                    />
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                        <Text style={[styles.label, { marginTop: 0 }]}>
+                            Cuisines ({selectedSet.size}/{MAX_CUISINES})
+                        </Text>
+                        <Pressable
+                            onPress={onClearCuisines}
+                            accessibilityRole="button"
+                            accessibilityLabel="Clear selected cuisines"
+                            disabled={selectedSet.size === 0}
+                        >
+                            <Text style={{ color: selectedSet.size ? COLORS.primary : COLORS.subtext, fontWeight: "700" }}>
+                                Clear
+                            </Text>
+                        </Pressable>
+                    </View>
 
-                    <Text style={styles.label}>Services (tags)</Text>
+                    {loadingCuisines ? (
+                        <View style={[styles.input, styles.center]}><ActivityIndicator /></View>
+                    ) : sortedCuisineOptions.length === 0 ? (
+                        <View style={[styles.input, styles.center]}>
+                            <Text style={{ color: COLORS.subtext }}>No cuisines available</Text>
+                        </View>
+                    ) : (
+                        <View style={styles.chipRow}>
+                            {sortedCuisineOptions.map(opt => {
+                                const selected = selectedSet.has(opt.code);
+                                const disabled = !selected && reachedLimit; // can't add more
+                                return (
+                                    <Pressable
+                                        key={opt.code}
+                                        onPress={() => !disabled && onToggleCuisine(opt.code)}
+                                        accessibilityRole="button"
+                                        accessibilityState={{ selected, disabled }}
+                                        accessibilityLabel={`Cuisine: ${opt.name}${selected ? ", selected" : ""}`}
+                                        style={[
+                                            styles.chip,
+                                            selected && styles.chipSelected,
+                                            disabled && { opacity: 0.5 },
+                                        ]}
+                                    >
+                                        <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                                            {opt.name}
+                                        </Text>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                    )}
+
+                    <Text style={[styles.label, styles.mt8]}>Services (tags)</Text>
                     <TextInput
                         value={services}
                         onChangeText={onChangeServices}
                         placeholder="e.g., waiters,bar"
                         style={styles.input}
+                        autoCapitalize="none"
                     />
 
                     <Text style={[styles.label, { marginTop: 8 }]}>Notes (optional)</Text>
@@ -171,7 +245,9 @@ export const CreateEventRequestForm = memo((props: Props) => {
                             <View style={styles.pickerLoading}><ActivityIndicator /></View>
                         ) : (
                             <Picker selectedValue={communityCode} onValueChange={onChangeCommunity}>
-                                {communities.map(c => <Picker.Item key={c.code} label={c.name} value={c.code} />)}
+                                {communities.map(c => (
+                                    <Picker.Item key={c.code} label={c.name} value={c.code} />
+                                ))}
                             </Picker>
                         )}
                     </View>
@@ -185,6 +261,7 @@ export const CreateEventRequestForm = memo((props: Props) => {
                     ) : (
                         <Pressable
                             accessibilityRole="button"
+                            accessibilityLabel="Choose province"
                             onPress={onOpenProvinceModal}
                             style={styles.input}
                         >
@@ -196,7 +273,12 @@ export const CreateEventRequestForm = memo((props: Props) => {
 
                     {/* Ciudad */}
                     <Text style={styles.label}>Ciudad (Municipio)</Text>
-                    <Pressable accessibilityRole="button" onPress={onOpenCityModal} style={styles.input}>
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Choose city"
+                        onPress={onOpenCityModal}
+                        style={styles.input}
+                    >
                         <Text style={{ color: selectedMunicipalityName ? COLORS.text : COLORS.subtext }}>
                             {selectedMunicipalityName ?? "Select city"}
                         </Text>

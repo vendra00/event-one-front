@@ -12,8 +12,10 @@ function chipColor(s: EventRequestStatus) {
         default: return "#4B5563";
     }
 }
-const euro = (c?: number | null) => (c == null ? undefined : (c / 100).toLocaleString(undefined, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }));
-const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+const euro = (c?: number | null) =>
+    c == null ? undefined : (c / 100).toLocaleString(undefined, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+const fmt = (iso: string) =>
+    new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
 export default function RequestDetailsScreen({ route, navigation }: any) {
     const id: number = route.params?.id;
@@ -43,7 +45,6 @@ export default function RequestDetailsScreen({ route, navigation }: any) {
                 onPress: async () => {
                     const updated = await cancelEventRequest(item.id);
                     setItem(updated);
-                    // pop back to list and let it refresh (or keep here to show CANCELED)
                     navigation.goBack();
                 },
             },
@@ -59,6 +60,16 @@ export default function RequestDetailsScreen({ route, navigation }: any) {
     }
 
     const canCancel = item.status === "OPEN";
+
+    // Build tags: cuisine names + service tags (CSV)
+    const cuisineNames = (item.cuisines ?? []).map(c => c.name).filter(Boolean);
+    const serviceTags = (item.services ?? "").split(",").map(s => s.trim()).filter(Boolean);
+    const tags = [...cuisineNames, ...serviceTags];
+
+    const city = item.location?.municipalityName ?? "-";
+    const province = item.location?.provinceName ? `, ${item.location?.provinceName}` : "";
+    const locality = item.location?.locality;
+    const postal = item.location?.postalCode;
 
     return (
         <ScrollView
@@ -82,13 +93,23 @@ export default function RequestDetailsScreen({ route, navigation }: any) {
                     </View>
                 </View>
 
-                <Text style={{ color: "#374151" }}>{item.city ?? "-"}{item.region ? `, ${item.region}` : ""}</Text>
-                <Text style={{ color: "#374151" }}>{fmt(item.startsAt)} – {fmt(item.endsAt)} • {item.guests} guests</Text>
-
-                {(item.cuisines || item.services) && (
+                {/* Location (normalized) */}
+                <Text style={{ color: "#374151" }}>
+                    {city}{province}
+                </Text>
+                {(locality || postal) && (
                     <Text style={{ color: "#6B7280" }}>
-                        {(item.cuisines ?? "").split(",").filter(Boolean).join(" · ")}
-                        {item.services ? (item.cuisines ? " · " : "") + item.services.split(",").filter(Boolean).join(" · ") : ""}
+                        {locality ? `${locality}` : ""}{locality && postal ? " · " : ""}{postal ? `CP ${postal}` : ""}
+                    </Text>
+                )}
+
+                <Text style={{ color: "#374151" }}>
+                    {fmt(item.startsAt)} – {fmt(item.endsAt)} • {item.guests} guests
+                </Text>
+
+                {tags.length > 0 && (
+                    <Text style={{ color: "#6B7280" }}>
+                        {tags.join(" · ")}
                     </Text>
                 )}
 
@@ -98,10 +119,10 @@ export default function RequestDetailsScreen({ route, navigation }: any) {
                     </Text>
                 )}
 
-                {!!item.note && (
+                {!!item.notes && (
                     <View style={{ marginTop: 6 }}>
                         <Text style={{ color: "#6B7280", marginBottom: 4 }}>Notes</Text>
-                        <Text style={{ color: "#111827" }}>{item.note}</Text>
+                        <Text style={{ color: "#111827" }}>{item.notes}</Text>
                     </View>
                 )}
 
