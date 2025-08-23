@@ -33,7 +33,7 @@ export default function RequestDetailsScreen({ route, navigation }: any) {
         }
     }, [id]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { void load(); }, [load]);
 
     const onCancel = () => {
         if (!item) return;

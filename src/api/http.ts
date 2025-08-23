@@ -13,12 +13,13 @@ async function getToken(): Promise<string | null> {
 export async function httpGetAuth<T>(path: string): Promise<T> {
     const token = await getToken();
     if (!token) throw new Error("Not authenticated");
+
     const res = await fetch(`${API_BASE}${path}`, {
-        headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-        },
+        headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${path}`);
-    return res.json() as Promise<T>;
+
+    const json = (await res.json()) as T;   // ✅ await the async call
+    return json;
 }
+

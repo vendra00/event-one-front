@@ -19,7 +19,7 @@ export default function RequestsScreen() {
         setData(res.data);
     };
 
-    useEffect(() => { load(); }, [includeNearby]);
+    useEffect(() => { void load(); }, [includeNearby]);
 
     return (
         <View style={{ padding: 16, gap: 10 }}>

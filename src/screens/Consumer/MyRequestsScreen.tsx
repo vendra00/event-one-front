@@ -64,11 +64,11 @@ export default function MyRequestsScreen({ navigation }: any) {
         }
     }, [page, totalPages, loadingMore, refreshing]);
 
-    useEffect(() => { load(true); }, [load]);
+    useEffect(() => { void load(true); }, [load]);
 
     useFocusEffect(
         useCallback(() => {
-            load(true);
+            void load(true);
             return () => {};
         }, [load])
     );
@@ -91,6 +91,7 @@ export default function MyRequestsScreen({ navigation }: any) {
             : "";
 
         return (
+
             <View
                 style={{
                     backgroundColor: "white",
@@ -157,9 +158,14 @@ export default function MyRequestsScreen({ navigation }: any) {
             keyExtractor={(it) => String(it.id)}
             renderItem={renderItem}
             contentContainerStyle={{ paddingVertical: 8 }}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={() => { void load(true); }}
+                />
+            }
             onEndReachedThreshold={0.5}
-            onEndReached={() => load(false)}
+            onEndReached={() => { void load(false); }}
             ListEmptyComponent={
                 <View style={{ padding: 24, alignItems: "center" }}>
                     <Text style={{ fontSize: 16, color: "#6B7280" }}>No requests yet</Text>
