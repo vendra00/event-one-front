@@ -2,11 +2,10 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import CreateEventRequestForm from "./form/CreateEventRequestForm";
-import { CityPickerModal } from "./CityPickerModal";
-import { ProvincePickerModal } from "./ProvincePickerModal";
-import { createEventRequest } from "../../../api/requests";
-import { getCommunities, getProvinces, getMunicipalities, resolvePostal, GeoOption } from "../../../api/geo";
-import { getCuisines, type CuisineOption } from "../../../api/cuisines";
+import { CityPickerModal, ProvincePickerModal } from "@/screens/Consumer/CreateEventRequest/modals";
+import { createEventRequest } from "@api/requests";
+import { getCommunities, getProvinces, getMunicipalities, resolvePostal, GeoOption } from "@api/geo";
+import { getCuisines, type CuisineOption } from "@api/cuisines";
 import { styles } from "./CreateEventRequestScreen.styles";
 
 export default function CreateEventRequestScreen({ navigation }: any) {

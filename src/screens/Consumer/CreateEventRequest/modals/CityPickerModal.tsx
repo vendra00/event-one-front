@@ -3,11 +3,11 @@ import {
     Modal, View, Text, TouchableWithoutFeedback, Keyboard, TextInput,
     ActivityIndicator, FlatList, TouchableOpacity,
 } from "react-native";
-import { styles } from "./CreateEventRequestScreen.styles";
-import { COLORS } from "../../../theme/colors";
-import type { GeoOption } from "../../../api/geo";
+import { styles } from "../CreateEventRequestScreen.styles";
+import { COLORS } from "@theme/colors";
+import type { GeoOption } from "@api/geo";
 
-type Props = {
+export type CityPickerModalProps = {
     visible: boolean;
     onRequestClose: () => void;
     municipalities: GeoOption[];
@@ -18,8 +18,10 @@ type Props = {
     loading: boolean;
 };
 
-export const CityPickerModal = memo(({visible, onRequestClose, municipalities,
-                                         municipalityCode, search, onChangeSearch, onSelect, loading,}: Props) => {
+function CityPickerModalInner({
+                                  visible, onRequestClose, municipalities,
+                                  municipalityCode, search, onChangeSearch, onSelect, loading,
+                              }: CityPickerModalProps) {
     return (
         <Modal visible={visible} animationType="slide" onRequestClose={onRequestClose} transparent>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -44,7 +46,10 @@ export const CityPickerModal = memo(({visible, onRequestClose, municipalities,
                                     keyExtractor={(item) => item.code}
                                     keyboardShouldPersistTaps="handled"
                                     renderItem={({ item }) => (
-                                        <TouchableOpacity onPress={() => { onSelect(item.code); onRequestClose(); }} style={styles.cityItem}>
+                                        <TouchableOpacity
+                                            onPress={() => { onSelect(item.code); onRequestClose(); }}
+                                            style={styles.cityItem}
+                                        >
                                             <Text style={{ color: COLORS.text }}>{item.name}</Text>
                                             {item.code === municipalityCode && (
                                                 <Text style={{ color: COLORS.primary, fontWeight: "700" }}>✓</Text>
@@ -68,4 +73,7 @@ export const CityPickerModal = memo(({visible, onRequestClose, municipalities,
             </TouchableWithoutFeedback>
         </Modal>
     );
-});
+}
+
+const CityPickerModal = memo(CityPickerModalInner);
+export default CityPickerModal;

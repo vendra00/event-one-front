@@ -1,27 +1,24 @@
 import React, { memo, useMemo } from "react";
 import { Modal, View, Text, Pressable, FlatList, ActivityIndicator, TextInput } from "react-native";
-import type { GeoOption } from "../../../api/geo";
-import { styles } from "./CreateEventRequestScreen.styles";
-import { COLORS } from "../../../theme/colors";
+import type { GeoOption } from "@api/geo";
+import { styles } from "../CreateEventRequestScreen.styles";
+import { COLORS } from "@theme/colors";
 
-type Props = {
+export type ProvincePickerModalProps = {
     visible: boolean;
     onRequestClose: () => void;
     provinces: GeoOption[];
     provinceCode: string;
     onSelect: (code: string) => void;
     loading?: boolean;
-
-    // NEW: search support
     search: string;
     onChangeSearch: (v: string) => void;
 };
 
-export const ProvincePickerModal = memo(({
-                                             visible, onRequestClose, provinces, provinceCode, onSelect, loading,
-                                             search, onChangeSearch,
-                                         }: Props) => {
-
+function ProvincePickerModalInner({
+                                      visible, onRequestClose, provinces, provinceCode, onSelect, loading,
+                                      search, onChangeSearch,
+                                  }: ProvincePickerModalProps) {
     const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();
         if (!q) return provinces;
@@ -41,7 +38,6 @@ export const ProvincePickerModal = memo(({
                         </Pressable>
                     </View>
 
-                    {/* NEW: Search box */}
                     <TextInput
                         value={search}
                         onChangeText={onChangeSearch}
@@ -87,4 +83,7 @@ export const ProvincePickerModal = memo(({
             </View>
         </Modal>
     );
-});
+}
+
+const ProvincePickerModal = memo(ProvincePickerModalInner);
+export default ProvincePickerModal;
