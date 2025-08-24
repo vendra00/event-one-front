@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { CreateEventRequestForm } from "./CreateEventRequestForm";
+import CreateEventRequestForm from "./form/CreateEventRequestForm";
 import { CityPickerModal } from "./CityPickerModal";
 import { ProvincePickerModal } from "./ProvincePickerModal";
 import { createEventRequest } from "../../../api/requests";

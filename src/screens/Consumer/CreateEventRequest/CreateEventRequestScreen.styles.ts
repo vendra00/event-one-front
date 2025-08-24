@@ -180,7 +180,7 @@ export const styles = StyleSheet.create({
         marginBottom: 8,
     },
     chipSelected: {
-        backgroundColor: "#EEF2FF", // subtle
+        backgroundColor: "#EEF2FF",
         borderColor: COLORS.primary,
     },
     chipText: {
