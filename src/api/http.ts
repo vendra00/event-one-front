@@ -1,5 +1,5 @@
 // api/http.ts
-import { Platform } from "react-native";
+import {Platform} from "react-native";
 // adjust base for emulator vs simulator
 export const API_BASE = Platform.OS === "android" ? "http://10.0.2.2:8080" : "http://localhost:8080";
 
@@ -19,7 +19,6 @@ export async function httpGetAuth<T>(path: string): Promise<T> {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${path}`);
 
-    const json = (await res.json()) as T;   // ✅ await the async call
-    return json;
+    return (await res.json()) as T;
 }
 
